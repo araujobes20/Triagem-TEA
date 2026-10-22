@@ -187,6 +187,90 @@ document.getElementById("app").innerHTML=h;window.scrollTo(0,0)}
 
 function baixar(){const r=calc(),b=new Blob([JSON.stringify({data:new Date().toISOString(),faixa_etaria:IDADE[S.idade],respostas:S.a,resultado:{veredito:r.vd[1],criterioA:r.cA,criterioB:r.cB,inicio_precoce:r.on,prejuizo:r.im,nivel_geral:r.lm}},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="triagem-tea.json";a.click()}
 render();
+
 </script>
+/* modulo-cognitivo.js · complemento do index.html (Triagem TEA)
+   Adiciona uma etapa opcional: resultados de testes já aplicados por psicólogo
+   (WASI-II, SB-5, WISC-V; Vineland-3, ABAS-3) e triagem de altas habilidades/superdotação.
+   Uso: salvar na mesma pasta do index.html e incluir, depois do script principal:
+   <script src="modulo-cognitivo.js"></script> */
+(function () {
+  Object.assign(Q, {
+    ah1: ["Aprende com rapidez e tem vocabulário ou memória muito acima do esperado para a idade.", SC],
+    ah2: ["Raciocina com abstração, resolve problemas complexos com facilidade e pergunta “por quê” com profundidade.", SC],
+    ah3: ["Persiste por muito tempo nos temas de interesse, com dedicação e exigência alta com o próprio trabalho.", SC],
+    ah4: ["Termina o que começa nas áreas de interesse, mesmo diante de dificuldade ou frustração.", SC],
+    ah5: ["Cria ideias, histórias, soluções ou invenções originais e incomuns.", SC],
+    ah6: ["Combina assuntos de modos inusitados, com imaginação e humor próprios.", SC]
+  });
+  STEPS.push({ t: "Testes aplicados e altas habilidades (opcional)", custom: true, ids: [] });
+
+  const AH = ["ah1", "ah2", "ah3", "ah4", "ah5", "ah6"];
+  const box = "font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)";
+  const num = (id, lab, min, max) => `<label class="q" style="display:block"><b>${lab}</b><br><input type="number" inputmode="numeric" min="${min}" max="${max}" value="${S.a[id] ?? ""}" onchange="S.a['${id}']=this.value===''?undefined:+this.value" style="${box};width:8em"></label>`;
+  const sel = (id, lab, o) => `<label class="q" style="display:block"><b>${lab}</b><br><select onchange="S.a['${id}']=this.value" style="${box}">${o.map(x => `<option ${S.a[id] === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>`;
+
+  const R0 = render;
+  render = function () {
+    if (!STEPS[S.step].custom) return R0();
+    document.getElementById("prog").style.width = (S.step / STEPS.length * 100) + "%";
+    document.getElementById("app").innerHTML = `<section class="step"><h2>${STEPS[S.step].t}</h2>
+<div class="aviso">Etapa opcional. Preencha apenas se já existirem resultados de testes aplicados por psicólogo. Este app não aplica nem estima QI ou comportamento adaptativo, pois esses instrumentos são padronizados, licenciados e de aplicação individual.</div>
+<h3>Avaliação cognitiva</h3>
+${sel("tc", "Teste aplicado", ["", "WASI-II", "SB-5", "WISC-V", "Outro"])}
+${num("iq", "QI total (média 100, desvio-padrão 15)", 40, 160)}
+${num("iqv", "QI verbal (se disponível)", 40, 160)}
+${num("iqn", "QI não verbal (se disponível)", 40, 160)}
+<h3>Comportamento adaptativo</h3>
+${sel("ta", "Instrumento", ["", "Vineland-3", "ABAS-3", "Outro"])}
+${num("ca", "Composto adaptativo (média 100, desvio-padrão 15)", 20, 160)}
+<h3>Triagem de altas habilidades ou superdotação</h3>
+<p>Compare com pessoas da mesma idade. Responda os 6 itens ou deixe todos em branco.</p>
+${AH.map(q).join("")}
+<div class="nav"><button class="sec" onclick="go(-1)">Voltar</button><button onclick="go(1)">Gerar relatório</button></div></section>`;
+    window.scrollTo(0, 0);
+  };
+
+  const cl = n => n >= 130 ? "Muito superior" : n >= 120 ? "Superior" : n >= 110 ? "Média alta" : n >= 90 ? "Média" : n >= 80 ? "Média baixa" : n >= 70 ? "Limítrofe" : "Muito baixa (abaixo de 70)";
+  const ad = n => n >= 115 ? "Acima do esperado" : n >= 86 ? "Dentro do esperado" : n >= 71 ? "Abaixo do esperado" : "Déficit significativo (70 ou menos)";
+
+  function extra() {
+    const { iq, iqv, iqn, ca } = S.a;
+    const ahOk = AH.every(i => S.a[i] !== undefined);
+    if (iq === undefined && ca === undefined && !ahOk) return "";
+    const r = calc(), tea = r.cA && r.cB;
+    let h = `<h3>Resultados de testes e altas habilidades</h3><table>`;
+    if (iq !== undefined) h += `<tr><td>QI total${S.a.tc ? " (" + S.a.tc + ")" : ""}</td><td>${iq}: ${cl(iq)}</td></tr>`;
+    if (iqv !== undefined && iqn !== undefined) h += `<tr><td>QI verbal x não verbal</td><td>${iqv} x ${iqn}${Math.abs(iqv - iqn) >= 15 ? ". Discrepância de 15 pontos ou mais: interprete o QI total com cautela e considere medidas não verbais (SB-5 não verbal, Leiter-3)." : ". Sem discrepância relevante."}</td></tr>`;
+    if (ca !== undefined) h += `<tr><td>Comportamento adaptativo${S.a.ta ? " (" + S.a.ta + ")" : ""}</td><td>${ca}: ${ad(ca)}</td></tr>`;
+    h += `</table>`;
+    const nota = [];
+    if (iq !== undefined && ca !== undefined) {
+      if (iq < 70 && ca <= 70) nota.push("QI e comportamento adaptativo ambos baixos: padrão compatível com deficiência intelectual, a confirmar clinicamente. O diagnóstico exige os dois componentes.");
+      else if (iq < 70) nota.push("QI baixo com adaptativo preservado: reveja a validade dos testes antes de concluir.");
+      else if (ca <= 70) nota.push("Déficit adaptativo sem QI baixo: investigar outros fatores (TEA, ansiedade, outras condições).");
+      else if (ca < iq - 15) nota.push("O comportamento adaptativo está bem abaixo do QI. Esse descompasso pode ocorrer no TEA sem deficiência intelectual e ajuda a definir metas de apoio.");
+    }
+    h += nota.map(x => `<p>${x}</p>`).join("");
+    let ah = false;
+    if (ahOk) {
+      const v = i => +S.a[i], ab = v("ah1") + v("ah2"), cm = v("ah3") + v("ah4"), cr = v("ah5") + v("ah6");
+      const n = [ab, cm, cr].filter(x => x >= 4).length;
+      ah = n === 3 || (ab >= 4 && n >= 2) || (iq !== undefined && iq >= 130);
+      const t = n === 3 ? "Indicadores nos três eixos (capacidade acima da média, dedicação à tarefa e criatividade)" : n === 2 ? "Indicadores parciais, em dois eixos" : n === 1 ? "Indicador isolado em um eixo" : "Sem indicadores relevantes";
+      h += `<table><tr><th>Eixo</th><th>Pontos (0 a 6)</th></tr><tr><td>Capacidade acima da média</td><td>${ab}</td></tr><tr><td>Dedicação à tarefa</td><td>${cm}</td></tr><tr><td>Criatividade</td><td>${cr}</td></tr></table><p><b>${t}.</b> Triagem baseada no modelo dos três anéis de Renzulli. Ela não identifica altas habilidades ou superdotação, apenas indica quem merece avaliação.</p>`;
+    }
+    if (ah && tea) h += `<div class="aviso"><b>Possível dupla excepcionalidade</b> (altas habilidades e TEA). Um quadro pode mascarar o outro: o bom desempenho esconde dificuldades sociais, e estas escondem o potencial.</div>`;
+    if (ahOk) h += `<p class="ref">No TEA, interesses intensos, memória para detalhes e persistência em temas específicos ocorrem mesmo sem altas habilidades, e por isso os eixos de capacidade e dedicação podem ser superestimados. O corte de QI ≥ 130 (2 desvios-padrão) é convenção; a identificação completa também considera criatividade, motivação e desempenho observado. Encaminhe para avaliação psicológica com WASI-II, WISC-V ou SB-5 (confira a aprovação do teste no SATEPSI/CFP) e, no Brasil, procure o atendimento educacional especializado ou o Núcleo de Atividades de Altas Habilidades/Superdotação (NAAH/S) da sua região.</p>`;
+    return h;
+  }
+
+  const P0 = report;
+  report = function () {
+    P0();
+    const x = extra();
+    if (x) document.getElementById("acoes").insertAdjacentHTML("beforebegin", x);
+  };
+})();
 </body>
 </html>
