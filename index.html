@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triagem TEA · Questionário baseado em DSM-5-TR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--paper:#fff;--ink:#1b2a33;--mute:#56656f;--line:#cfd8de;--acc:#34459f;--acc2:#2a7f74;--warn:#9a5b0c;--bad:#a42d2d;--r:6px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#10171c;--paper:#18222a;--ink:#e6edf1;--mute:#9db0bb;--line:#33434e;--acc:#8e9cf0;--acc2:#6cc7ba;--warn:#e0a85a;--bad:#f08a8a;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.6 "Atkinson Hyperlegible",system-ui,sans-serif;padding:0 16px 64px}
+main{max-width:760px;margin:0 auto}
+h1{font-size:1.9rem;line-height:1.2;margin:40px 0 8px}
+h2{font-size:1.3rem;margin:0 0 6px}
+h3{font-size:1.05rem;margin:22px 0 6px}
+p{margin:0 0 12px;max-width:68ch}
+.aviso{border-left:4px solid var(--warn);padding:10px 14px;background:var(--paper);margin:16px 0;font-size:.95rem}
+.alerta{border-left:4px solid var(--bad);padding:10px 14px;background:var(--paper);margin:16px 0}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:20px 0 4px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:3px;transition:width .25s}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-top:12px}
+.q{border:0;margin:0 0 20px;padding:0}
+.q legend{padding:0;margin-bottom:8px;font-weight:700}
+.q.miss legend{color:var(--bad)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{flex:1 1 140px;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;cursor:pointer;font-size:.93rem;display:flex;gap:8px;align-items:flex-start}
+.opts label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.opts label:has(input:focus-visible){outline:3px solid var(--acc);outline-offset:2px}
+.opts input{margin-top:4px;accent-color:var(--acc)}
+select{font:inherit;padding:8px;border-radius:var(--r);border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;padding:10px 18px;border-radius:var(--r);border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+@media (prefers-color-scheme:dark){button{color:#10171c}}
+button.sec{background:transparent;color:var(--acc)}
+button:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:.93rem;margin:6px 0 14px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:700}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.85rem;font-weight:700;border:1px solid currentColor}
+.t-high{color:var(--bad)}.t-mod{color:var(--warn)}.t-low{color:var(--acc2)}
+.veredito{border-left:6px solid var(--acc);padding:6px 16px;margin:10px 0 18px}
+.ref{font-size:.85rem;color:var(--mute)}
+.hide{display:none}
+@media print{body{background:#fff;color:#000}.nav,.bar,#acoes{display:none}.step{border:0;padding:0}}
+</style>
+</head>
+<body>
+<main>
+<h1>Triagem de Transtorno do Espectro Autista</h1>
+<p>Questionário orientado pelos critérios do DSM-5-TR e pela revisão de Yu, Ozonoff e Miller (<i>Assessment</i>, 2024). No final, você recebe um relatório com o perfil de sinais, o nível de suporte estimado, o perfil de apresentação e as possíveis condições associadas.</p>
+<div class="aviso"><b>Ferramenta de triagem e apoio educacional.</b> Ela não diagnostica. O diagnóstico de TEA exige avaliação clínica por profissionais capacitados, com entrevista de desenvolvimento e observação direta (por exemplo, ADI-R e ADOS-2). Nenhum dado sai do seu navegador.</div>
+<div class="bar" aria-hidden="true"><i id="prog" style="width:0"></i></div>
+<div id="app"></div>
+</main>
+<script>
+const SC=["Nunca","Às vezes","Frequentemente","Quase sempre"];
+const SUP=["Nenhum apoio notável","Algum apoio","Apoio substancial","Apoio muito substancial"];
+const LNG=["Fala fluente","Frases, mas com limitações","Poucas palavras ou frases","Quase não fala"];
+const GRV=["Nenhuma","Leve","Moderada","Grave"];
+const Q={
+a1a:["Tem dificuldade em manter conversa de ida e volta (iniciar, responder, sustentar o assunto).",SC],
+a1b:["Raramente compartilha interesses, emoções ou conquistas, ou reage de modo inesperado às emoções dos outros.",SC],
+a2a:["Contato visual, expressões do rosto ou gestos pouco usuais ou pouco combinados com a fala.",SC],
+a2b:["Tem dificuldade em entender linguagem corporal, tom de voz, ironia, piadas ou sentido figurado.",SC],
+a3a:["Tem dificuldade em fazer e manter amizades ou relações adequadas à idade.",SC],
+a3b:["Tem dificuldade em ajustar o comportamento a contextos diferentes ou em brincar e participar de grupos.",SC],
+mask:["Faz esforço consciente e cansativo para imitar, ensaiar ou disfarçar comportamentos sociais.",SC],
+b1a:["Faz movimentos repetitivos (balançar, bater as mãos, andar em círculos, estalar os dedos).",SC],
+b1b:["Usa objetos de forma repetitiva (alinhar, girar) ou repete falas e frases ensaiadas fora de contexto.",SC],
+b2a:["Sofre muito com pequenas mudanças de rotina, de local ou de planos.",SC],
+b2b:["Segue rituais rígidos (mesmo trajeto, mesma comida, mesmas fórmulas de cumprimento) e tem pensamento inflexível.",SC],
+b3a:["Tem interesses muito intensos ou restritos, incomuns em foco ou em profundidade.",SC],
+b3b:["Fixa-se em um tema ou objeto a ponto de atrapalhar outras atividades.",SC],
+b4a:["Reage de forma intensa a sons, luzes, texturas, cheiros ou sabores, ou quase não reage a eles.",SC],
+b4b:["Explora aspectos sensoriais de modo incomum (cheirar, tocar, olhar objetos girando) ou parece indiferente a dor ou temperatura.",SC],
+h1:["Sinais parecidos já estavam presentes nos primeiros anos de vida, mesmo que só tenham ficado claros depois.",SC],
+h2:["Houve atraso ou diferença na fala, na comunicação ou no brincar na primeira infância.",SC],
+imp:["Essas características prejudicam estudo, trabalho, vida familiar ou social.",GRV],
+s1:["Quanto apoio a pessoa precisa hoje em comunicação e interação social?",SUP],
+s2:["Quanto apoio precisa por causa de rigidez, rotinas e comportamentos repetitivos?",SUP],
+lng:["Como é a fala funcional?",LNG],
+int:["Há dificuldade de aprendizagem ou raciocínio, de acordo com a idade?",GRV],
+ad:["Há dificuldade em autocuidado, segurança, dinheiro ou transporte, de acordo com a idade?",GRV],
+an1:["Preocupação, medo ou tensão excessivos e difíceis de controlar.",SC],
+an2:["Evita lugares, pessoas ou situações por medo ou desconforto.",SC],
+an3:["Irritabilidade, choro ou agitação diante de situações de ansiedade, com sintomas físicos (coração acelerado, falta de ar).",SC],
+ad1:["Dificuldade de manter a atenção em tarefas, esquecimentos e perda de objetos.",SC],
+ad2:["Inquietação, agitação motora ou dificuldade de ficar parado quando se espera isso.",SC],
+ad3:["Age sem pensar, interrompe os outros, tem dificuldade em esperar a vez.",SC],
+de1:["Humor triste, vazio ou irritável na maior parte dos dias.",SC],
+de2:["Perda de interesse, de energia ou de iniciativa, com mudanças de sono ou apetite.",SC],
+de3:["Pensamentos de que a vida não vale a pena ou de se machucar.",SC]
+};
+const STEPS=[
+{t:"Quem será avaliado",ids:[]},
+{t:"Interação e comunicação social",n:"Pense nos últimos 6 meses. Se o questionário é sobre você, leia “a pessoa” como “eu”.",ids:["a1a","a1b","a2a","a2b","a3a","a3b","mask"]},
+{t:"Comportamentos repetitivos, rotinas e sensorial",ids:["b1a","b1b","b2a","b2b","b3a","b3b","b4a","b4b"]},
+{t:"Início, prejuízo e apoio",ids:["h1","h2","imp","s1","s2","lng","int","ad"]},
+{t:"Ansiedade, atenção e humor",n:"Esses itens ajudam a levantar condições que costumam acompanhar o TEA.",ids:["an1","an2","an3","ad1","ad2","ad3","de1","de2","de3"]}
+];
+const IDADE=["Menos de 3 anos","3 a 5 anos","6 a 11 anos","12 a 17 anos","18 anos ou mais"];
+const INSTR=[
+["M-CHAT-R/F (16 a 30 meses, nível 1) e Infant Toddler Checklist (6 a 24 meses).","ADOS-2 Módulo Toddler (12 a 30 meses) e ADI-R versão toddler.","Desenvolvimento: Bayley-4 ou Mullen. Adaptativo: Vineland-3 ou ABAS-3.","Opções remotas em estudo: TELE-ASD-PEDS e BOSA (validação ainda em andamento)."],
+["SCQ (a partir de 4 anos, com idade mental acima de 2 anos) e STAT (24 a 35 meses).","ADOS-2 (módulo conforme a linguagem), ADI-R e CARS-2-ST.","Cognitivo: DAS-II, WPPSI-IV, SB-5 ou Leiter-3 (se não verbal).","Adaptativo: Vineland-3 ou ABAS-3."],
+["SCQ, ADOS-2 (Módulos 2 ou 3), ADI-R e CARS-2 (ST ou HF conforme o QI estimado).","Cognitivo: WISC-V, DAS-II ou SB-5.","Adaptativo: Vineland-3 ou ABAS-3. Comorbidades: CBCL e BASC-3."],
+["SCQ, ADOS-2 (Módulo 3 ou 4), ADI-R e CARS-2-HF.","Cognitivo: WISC-V, WASI-II ou SB-5. Adaptativo: Vineland-3 ou ABAS-3.","Comorbidades: CBCL e BASC-3. Atenção ao uso de autorrelato em jovens com TEA."],
+["ADOS-2 Módulo 4 e entrevista de desenvolvimento com alguém que conheça a história (ADI-R quando possível).","Cognitivo: WASI-II ou SB-5. Adaptativo: Vineland-3 ou ABAS-3.","Investigar camuflagem social e comorbidades psiquiátricas, que costumam atrasar o diagnóstico em adultos."]
+];
+const S={step:0,a:{},idade:null,miss:false};
+
+function q(id){const [t,o]=Q[id];const m=S.miss&&S.a[id]===undefined?" miss":"";
+return `<fieldset class="q${m}"><legend>${t}</legend><div class="opts">${o.map((x,i)=>`<label><input type="radio" name="${id}" value="${i}" ${S.a[id]==i?"checked":""} onchange="S.a['${id}']=${i}">${x}</label>`).join("")}</div></fieldset>`}
+
+function render(){
+const st=STEPS[S.step];
+document.getElementById("prog").style.width=(S.step/STEPS.length*100)+"%";
+let h=`<section class="step"><h2>${st.t}</h2>${st.n?`<p>${st.n}</p>`:""}`;
+if(S.step==0){h+=`<fieldset class="q${S.miss&&S.idade===null?" miss":""}"><legend>Faixa etária da pessoa avaliada</legend><select onchange="S.idade=+this.value" aria-label="Faixa etária"><option value="">Selecione</option>${IDADE.map((x,i)=>`<option value="${i}" ${S.idade===i?"selected":""}>${x}</option>`).join("")}</select></fieldset><p>Responda pela pessoa (como cuidador) ou por você mesmo. Para crianças pequenas, a informação de quem convive com elas é essencial.</p>`}
+else h+=st.ids.map(q).join("");
+h+=`<div class="nav"><button class="sec" onclick="go(-1)" ${S.step?"":"disabled"}>Voltar</button><button onclick="go(1)">${S.step==STEPS.length-1?"Gerar relatório":"Continuar"}</button></div></section>`;
+document.getElementById("app").innerHTML=h;window.scrollTo(0,0)}
+
+function go(d){
+if(d>0){const st=STEPS[S.step];const ok=S.step==0?S.idade!==null:st.ids.every(i=>S.a[i]!==undefined);
+if(!ok){S.miss=true;render();return}}
+S.miss=false;S.step+=d;
+if(S.step>=STEPS.length){report();return}
+render()}
+
+function calc(){
+const v=i=>+S.a[i],sub=x=>v(x+"a")+v(x+"b");
+const A=["a1","a2","a3"].map(sub),B=["b1","b2","b3","b4"].map(sub);
+const aN=A.filter(x=>x>=4).length,bN=B.filter(x=>x>=4).length;
+const sa=A.reduce((x,y)=>x+y),sb=B.reduce((x,y)=>x+y),tot=sa+sb;
+const cA=aN==3,cB=bN>=2,on=Math.max(v("h1"),v("h2"))>=2,im=v("imp")>=2;
+let vd;
+if(cA&&cB&&on&&im)vd=["high","Perfil compatível com TEA","Os critérios A, B, C e D foram atendidos nas respostas. Recomenda-se avaliação diagnóstica formal."];
+else if(cA&&cB)vd=["mod","Critérios de sintomas atendidos, com ponto a confirmar","Os domínios A e B foram atendidos, mas o início precoce ou o prejuízo funcional não ficaram claros. Isso precisa ser esclarecido em avaliação clínica."];
+else if((aN>=2&&bN>=1)||tot>=18)vd=["mod","Indícios parciais","Há sinais em parte dos critérios. Podem refletir TEA com apresentação sutil, camuflagem ou outras condições. Vale avaliação se houver prejuízo."];
+else vd=["low","Poucos indícios de TEA","As respostas não atingem o padrão dos critérios. Se a preocupação persistir, procure um profissional."];
+const lvl=n=>n>=3?3:n==2?2:1,LT=["","Nível 1: exige apoio","Nível 2: exige apoio substancial","Nível 3: exige apoio muito substancial"];
+const l1=lvl(v("s1")),l2=lvl(v("s2")),lm=Math.max(l1,l2);
+const pA=sa/18,pB=sb/24,pred=Math.abs(pA-pB)<.15?"Perfil equilibrado entre comunicação social e comportamentos repetitivos":pA>pB?"Predomínio de dificuldades de comunicação e interação social":"Predomínio de comportamentos repetitivos e rigidez";
+const d=i=>i.map(v).reduce((x,y)=>x+y);
+const co=[
+["Ansiedade",d(["an1","an2","an3"]),"20% no TEA contra 7,3% na população geral","Evitação e irritabilidade aparecem tanto no TEA quanto na ansiedade, então a distinção exige olhar a trajetória dos sintomas."],
+["TDAH",d(["ad1","ad2","ad3"]),"28% no TEA contra 7,2% na população geral","Os dois quadros compartilham problemas sociais, de linguagem, sensoriais e de atenção."],
+["Depressão",d(["de1","de2","de3"]),"11% no TEA contra 4,7% na população geral","Pouca iniciativa social e pouco contato visual podem ocorrer nos dois quadros."],
+["Deficiência intelectual",v("int")+v("ad"),"Cerca de 35,2% das crianças autistas (dados do CDC, 2018)","Exige avaliação cognitiva e de comportamento adaptativo."]
+];
+const idf=v("int")+v("ad")>=3||v("lng")>=2;
+return{A,B,aN,bN,sa,sb,tot,cA,cB,on,im,vd,l1,l2,lm,LT,pred,co,idf,LNG:v("lng"),lang:LNG[v("lng")],sens:sub("b4")>=4,mask:v("mask")>=2,ideacao:v("de3")>=1,
+hist:v("lng")==0&&v("h2")<=1&&!idf?"Corresponde ao que antes se chamava Transtorno de Asperger":v("lng")>=2||idf?"Corresponde ao que antes se chamava Transtorno Autista":"Corresponde ao que antes se chamava TGD sem outra especificação"}}
+
+const flag=n=>n>=7?["t-high","sinais marcantes"]:n>=4?["t-mod","sinais presentes"]:["t-low","sem sinais relevantes"];
+const yn=b=>b?'<span class="tag t-high">Atendido</span>':'<span class="tag t-low">Não atendido</span>';
+
+function report(){
+document.getElementById("prog").style.width="100%";
+const r=calc(),f=r.cA&&r.cB;
+let h=`<section class="step"><h2>Relatório de triagem</h2><p class="ref">Gerado em ${new Date().toLocaleDateString("pt-BR")}. Faixa etária: ${IDADE[S.idade]}.</p>`;
+if(r.ideacao)h+=`<div class="alerta"><b>Atenção:</b> houve resposta indicando pensamentos de que a vida não vale a pena ou de se machucar. Procure ajuda agora. No Brasil, o CVV atende 24 horas pelo telefone 188, e em emergência ligue 192 (SAMU).</div>`;
+h+=`<div class="veredito"><h3 style="margin-top:0">${r.vd[1]}</h3><p>${r.vd[2]}</p></div>
+<h3>Critérios do DSM-5-TR</h3>
+<table><tr><th>Critério</th><th>Resultado</th></tr>
+<tr><td>A. Comunicação social: os 3 componentes presentes (reciprocidade, comunicação não verbal, relacionamentos). Componentes presentes: ${r.aN} de 3.</td><td>${yn(r.cA)}</td></tr>
+<tr><td>B. Comportamentos repetitivos: pelo menos 2 de 4 (motor/fala, rotinas, interesses, sensorial). Presentes: ${r.bN} de 4.</td><td>${yn(r.cB)}</td></tr>
+<tr><td>C. Sintomas desde o período precoce do desenvolvimento</td><td>${yn(r.on)}</td></tr>
+<tr><td>D. Prejuízo clinicamente significativo</td><td>${yn(r.im)}</td></tr></table>
+<p class="ref">Um componente conta como presente quando os dois itens correspondentes somam 4 ou mais pontos (de 6).</p>`;
+if(f){h+=`<h3>Nível de suporte estimado</h3><table><tr><td>Comunicação social</td><td>${r.LT[r.l1]}</td></tr><tr><td>Comportamentos restritos e repetitivos</td><td>${r.LT[r.l2]}</td></tr><tr><th>Nível geral (o maior)</th><th>${r.LT[r.lm]}</th></tr></table>
+<h3>Perfil de apresentação</h3><p>No DSM-5 os antigos transtorno autista, Asperger e TGD-SOE foram reunidos em um só diagnóstico, então não existem “tipos” formais. O perfil abaixo descreve a apresentação:</p>
+<table><tr><td>Predomínio</td><td>${r.pred}</td></tr><tr><td>Linguagem</td><td>${r.lang}</td></tr><tr><td>Deficiência intelectual</td><td>${r.idf?"Possível, a investigar":"Sem sinais fortes nas respostas"}</td></tr><tr><td>Alterações sensoriais</td><td>${r.sens?"Proeminentes":"Sem destaque"}</td></tr><tr><td>Correspondência histórica (apenas informativa)</td><td>${r.hist}</td></tr></table>`}
+else h+=`<p>Nível de suporte e perfil só são estimados quando os critérios A e B são atendidos.</p>`;
+if(r.mask)h+=`<div class="aviso">Você indicou esforço frequente de camuflagem social. A camuflagem pode reduzir os sinais visíveis e levar a uma subestimação, algo descrito sobretudo em mulheres e em adultos diagnosticados tardiamente.</div>`;
+h+=`<h3>Possíveis condições associadas</h3><table><tr><th>Condição</th><th>Sinais</th><th>Frequência no TEA</th></tr>${r.co.map(c=>{const g=c[0]=="Deficiência intelectual"?(r.idf?["t-mod","a investigar"]:["t-low","sem sinais relevantes"]):flag(c[1]);return `<tr><td><b>${c[0]}</b><br><span class="ref">${c[3]}</span></td><td><span class="tag ${g[0]}">${g[1]}</span></td><td>${c[2]}</td></tr>`}).join("")}</table>
+<p class="ref">Mais de 70% das pessoas autistas têm ao menos uma condição psiquiátrica associada, e mais de 40% têm duas ou mais (Simonoff et al., 2008).</p>
+<h3>Próximos passos e instrumentos indicados para esta faixa etária</h3><ul>${INSTR[S.idade].map(x=>`<li>${x}</li>`).join("")}</ul>
+<p>Procure equipe com experiência em TEA (psicologia, fonoaudiologia, psiquiatria ou neuropediatria). Quando há suspeita em crianças, não é preciso esperar o diagnóstico para iniciar intervenção precoce.</p>
+<h3>Limitações</h3><p class="ref">Este questionário não é um instrumento validado nem substitui ADOS-2, ADI-R ou julgamento clínico. Os pontos de corte são heurísticos, definidos a partir dos critérios do DSM-5-TR, e podem gerar falsos positivos e falsos negativos. Os dados de prevalência vêm da revisão de Yu, Ozonoff e Miller.</p>
+<p class="ref">Referência: Yu, Y., Ozonoff, S., &amp; Miller, M. (2024). Assessment of Autism Spectrum Disorder. <i>Assessment, 31</i>(1), 24–41. doi:10.1177/10731911231173089</p>
+<div id="acoes" class="nav"><button onclick="window.print()">Imprimir ou salvar em PDF</button><button class="sec" onclick="baixar()">Baixar dados (JSON)</button><button class="sec" onclick="location.reload()">Refazer</button></div></section>`;
+document.getElementById("app").innerHTML=h;window.scrollTo(0,0)}
+
+function baixar(){const r=calc(),b=new Blob([JSON.stringify({data:new Date().toISOString(),faixa_etaria:IDADE[S.idade],respostas:S.a,resultado:{veredito:r.vd[1],criterioA:r.cA,criterioB:r.cB,inicio_precoce:r.on,prejuizo:r.im,nivel_geral:r.lm}},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="triagem-tea.json";a.click()}
+render();
+</script>
+</body>
+</html>
