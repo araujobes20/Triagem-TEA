@@ -187,13 +187,13 @@ document.getElementById("app").innerHTML=h;window.scrollTo(0,0)}
 
 function baixar(){const r=calc(),b=new Blob([JSON.stringify({data:new Date().toISOString(),faixa_etaria:IDADE[S.idade],respostas:S.a,resultado:{veredito:r.vd[1],criterioA:r.cA,criterioB:r.cB,inicio_precoce:r.on,prejuizo:r.im,nivel_geral:r.lm}},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="triagem-tea.json";a.click()}
 render();
-
-</script>
+</script> */
 /* modulo-cognitivo.js · complemento do index.html (Triagem TEA)
    Adiciona uma etapa opcional: resultados de testes já aplicados por psicólogo
    (WASI-II, SB-5, WISC-V; Vineland-3, ABAS-3) e triagem de altas habilidades/superdotação.
    Uso: salvar na mesma pasta do index.html e incluir, depois do script principal:
-   <script src="modulo-cognitivo.js"></script> */
+   <script src="modulo-cognitivo.js">
+
 (function () {
   Object.assign(Q, {
     ah1: ["Aprende com rapidez e tem vocabulário ou memória muito acima do esperado para a idade.", SC],
@@ -272,5 +272,6 @@ ${AH.map(q).join("")}
     if (x) document.getElementById("acoes").insertAdjacentHTML("beforebegin", x);
   };
 })();
+</script>
 </body>
 </html>
